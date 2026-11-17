@@ -7,11 +7,21 @@ GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 
+
 def get_json(url, params):
-    """Request JSON from an external API and raise a useful error on failure."""
-    response = requests.get(url, params=params, timeout=12)
-    response.raise_for_status()
-    return response.json()
+    """Request JSON from an external API and log useful errors."""
+    try:
+        app.logger.info("Requesting external API: %s", url)
+
+        response = requests.get(url, params=params, timeout=20)
+        response.raise_for_status()
+
+        app.logger.info("External API response: %s", response.status_code)
+        return response.json()
+
+    except requests.RequestException:
+        app.logger.exception("External API request failed: %s", url)
+        raise
 
 
 def find_location(city):
@@ -104,6 +114,7 @@ def weather():
     except requests.Timeout:
         return jsonify({"error": "The weather service took too long to respond. Please try again."}), 504
     except requests.RequestException:
+        app.logger.exception("Weather endpoint failed while fetching external data")
         return jsonify({"error": "Couldn't reach the weather service. Check your internet connection."}), 502
     except (KeyError, TypeError):
         app.logger.exception("Unexpected weather API response")
