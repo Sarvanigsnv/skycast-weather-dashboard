@@ -32,7 +32,11 @@ def get_json(url, params):
             params=params,
             timeout=20
         )
-
+        if response.status_code == 429:
+            app.logger.error(
+        "Open-Meteo rate-limit response: %s",
+        response.text
+    )
         response.raise_for_status()
 
         app.logger.info(
